@@ -1,6 +1,7 @@
-# ComfyUI-Flux_Keys_Modifier
+#Flux Keys Modifier 🧪 
 
-This custom node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allows you to dynamically modify specific tensor groups within a **UNet-only** model (like FLUX) using a variety of control sliders. The model can be reset between generations or optionally saved.
+This custom node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allows you to dynamically you to tweak key groups within a FLUX UNet model to change visual rendering styles.
+Supports FP8, FP16, and FP32 models. The model can be reset between generations or optionally saved.
 
 ## ✨ Features
 
@@ -34,3 +35,8 @@ These are abstracted tensor categories — not strict visual effects:
 - **Keys Group E** → `img_mlp.0.weight`
 - **Keys Group F** → `txt_attn.qkv.weight`
 - **Keys Group G** → `time_in.in_layer.bias`
+  
+##🧰 How to Install
+
+Just git clone this repo or copy file to your ComfyUI custom nodes directory:
+Then restart ComfyUI.
