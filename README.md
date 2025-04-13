@@ -38,5 +38,5 @@ These are abstracted tensor categories — not strict visual effects:
   
 ## 🧰 How to Install
 
-Just git clone this repo or copy file to your ComfyUI custom nodes directory:
+Just copy file flux_style_editor_node.py  to your ComfyUI custom nodes directory:
 Then restart ComfyUI.
