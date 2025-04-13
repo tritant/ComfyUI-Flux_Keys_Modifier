@@ -1,6 +1,6 @@
 # Flux Keys Modifier 🧪
 
-This custom node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allows you to dynamically you to tweak key groups within a FLUX UNet model to change visual rendering styles.
+This custom node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allows you to dynamically tweak key groups within a FLUX UNet model to change visual rendering styles.
 Supports FP8, FP16, and FP32 models. The model can be reset between generations or optionally saved.
 
 ## ✨ Features
