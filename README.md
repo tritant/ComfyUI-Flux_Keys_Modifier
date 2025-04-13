@@ -1,4 +1,4 @@
-Flux Keys Modifier 🧪 
+# Flux Keys Modifier 🧪
 
 This custom node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI) allows you to dynamically you to tweak key groups within a FLUX UNet model to change visual rendering styles.
 Supports FP8, FP16, and FP32 models. The model can be reset between generations or optionally saved.
@@ -36,7 +36,7 @@ These are abstracted tensor categories — not strict visual effects:
 - **Keys Group F** → `txt_attn.qkv.weight`
 - **Keys Group G** → `time_in.in_layer.bias`
   
-🧰 How to Install
+## 🧰 How to Install
 
 Just git clone this repo or copy file to your ComfyUI custom nodes directory:
 Then restart ComfyUI.
