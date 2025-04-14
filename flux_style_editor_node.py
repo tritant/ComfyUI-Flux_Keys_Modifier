@@ -1,7 +1,10 @@
 import os
 import torch
 import random
-from safetensors.torch import save_file
+from safetensors.torch import save_file, load_file
+from folder_paths import get_filename_list, get_full_path
+from comfy.sd import load_lora_for_models
+from comfy_extras.nodes_model_merging import save_checkpoint
 
 class FluxKeyModifier:
     def __init__(self):
@@ -37,11 +40,23 @@ class FluxKeyModifier:
             "randomize_all": ("BOOLEAN", {"default": False}),
             "save_model": ("BOOLEAN", {"default": False}),
             "save_filename": ("STRING", {"default": "Flux_keys_modified.safetensors"}),
+
+            "enable_lora1": ("BOOLEAN", {"default": False}),
+            "lora1": (get_filename_list("loras"), {"tooltip": "Select LoRA 1"}),
+            "lora1_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.01}),
+
+            "enable_lora2": ("BOOLEAN", {"default": False}),
+            "lora2": (get_filename_list("loras"), {"tooltip": "Select LoRA 2"}),
+            "lora2_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.01}),
+
+            "enable_lora3": ("BOOLEAN", {"default": False}),
+            "lora3": (get_filename_list("loras"), {"tooltip": "Select LoRA 3"}),
+            "lora3_weight": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.01}),
         }
         sliders = {}
         for key in "ABCDEFG":
             group_label = f"Keys Group {key}"
-            sliders[f"{group_label}"] = ("FLOAT", {"default": 0.0, "label": group_label, "min": -100.0, "max": 200.0})
+            sliders[group_label] = ("FLOAT", {"default": 0.0, "label": group_label, "min": -100.0, "max": 200.0})
             sliders[f"randomize_{group_label}"] = ("BOOLEAN", {"default": False})
         base_inputs.update(sliders)
         return {"required": base_inputs}
@@ -53,6 +68,9 @@ class FluxKeyModifier:
 
     def apply_styles(self, unet_model, reset_model=True, randomize_all=False,
                      save_model=False, save_filename="Flux_keys_modified.safetensors",
+                     enable_lora1=False, lora1="", lora1_weight=1.0,
+                     enable_lora2=False, lora2="", lora2_weight=1.0,
+                     enable_lora3=False, lora3="", lora3_weight=1.0,
                      **kwargs):
 
         print(f"[DEBUG] Received unet_model type: {type(unet_model)}")
@@ -80,8 +98,26 @@ class FluxKeyModifier:
         except AttributeError:
             raise ValueError(f"Provided model is not compatible. Expected a Comfy ModelPatcher. Got: {type(unet_model)}")
 
-        if not hasattr(base_model, "state_dict"):
-            raise ValueError("Extracted model does not have .state_dict()")
+        def apply_lora(patcher, lora_file, weight):
+            try:
+                lora_sd = load_file(lora_file)
+                patcher, _ = load_lora_for_models(patcher, None, lora_sd, weight, 0.0)
+                print(f"[LORA] Merged: {lora_file} at weight {weight}")
+                return patcher
+            except Exception as e:
+                print(f"[LORA ERROR] Failed to load {lora_file}: {e}")
+                return patcher
+
+        for enabled, lora, weight in [
+            (enable_lora1, lora1, lora1_weight),
+            (enable_lora2, lora2, lora2_weight),
+            (enable_lora3, lora3, lora3_weight)
+        ]:
+            if enabled and lora:
+                full_path = get_full_path("loras", lora)
+                patcher = apply_lora(patcher, full_path, weight)
+
+        base_model = patcher.model
 
         all_keys = list(base_model.state_dict().keys())
         key_style_map = {}
@@ -152,23 +188,27 @@ class FluxKeyModifier:
                         pass
 
         if save_model:
-            try:
-                output_dir = os.path.join(os.getcwd(), "output")
-                os.makedirs(output_dir, exist_ok=True)
-                output_path = os.path.join(output_dir, save_filename)
-                print(f"[SAVE] Saving modified model to {output_path}")
-                full_state_dict = base_model.state_dict()
-                for k in state_dict:
-                    if k in full_state_dict:
-                        full_state_dict[k] = state_dict[k]
-                save_file(full_state_dict, output_path)
-                print("[SAVE] Model saved successfully.")
-            except Exception as e:
-                print(f"[SAVE ERROR] Failed to save model: {e}")
+          try:
+              output_dir = os.path.join(os.getcwd(), "output")
+              os.makedirs(output_dir, exist_ok=True)
+              output_path = os.path.join(output_dir, save_filename)
+              print(f"[SAVE] Saving modified model to {output_path}")
 
-        print(f"✅ {modified} tensors modified." if modified else "⚠️ No tensors modified.")
+              save_checkpoint(
+                  model=patcher,
+                  filename_prefix=os.path.splitext(save_filename)[0],
+                  output_dir=output_dir,
+                  prompt=None,
+                  extra_pnginfo=None
+              )
+       
+              print("[SAVE] Model saved successfully.")
+          except Exception as e:
+              print(f"[SAVE ERROR] Failed to save model: {e}")
 
-        return (unet_model, display_log)
+
+        print("✅ {} tensors modified.".format(modified) if modified else "⚠️ No tensors modified.")
+        return (patcher, display_log)
 
 
 NODE_CLASS_MAPPINGS = {
