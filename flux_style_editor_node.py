@@ -116,6 +116,10 @@ class FluxKeyModifier:
             if enabled and lora:
                 full_path = get_full_path("loras", lora)
                 patcher = apply_lora(patcher, full_path, weight)
+                
+        # ✅ Attendre la fin des merges LoRA avant de modifier les clés
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()        
 
         base_model = patcher.model
 
